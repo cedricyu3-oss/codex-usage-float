@@ -22,7 +22,7 @@ It displays the remaining 5-hour allowance as a compact floating ball. Click to 
 ## Run locally
 
 ```zsh
-git clone https://github.com/YOUR-ACCOUNT/codex-usage-float.git
+git clone https://github.com/cedricyu3-oss/codex-usage-float.git
 cd codex-usage-float
 zsh run.sh
 ```
@@ -43,7 +43,7 @@ codex plugin add codex-usage-float@codex-usage-float
 For a GitHub-hosted marketplace, replace `.` with the repository source, for example:
 
 ```zsh
-codex plugin marketplace add YOUR-ACCOUNT/codex-usage-float --ref main
+codex plugin marketplace add cedricyu3-oss/codex-usage-float --ref main
 codex plugin add codex-usage-float@codex-usage-float
 ```
 
