@@ -32,7 +32,7 @@ static const NSInteger WeeklyWindowMinutes = 10080;
 @property(nonatomic, strong) NSTimer *refreshTimer;
 @property(nonatomic, strong) NSDateFormatter *dateFormatter;
 @property(nonatomic, strong) NSPanel *floatingPanel;
-@property(nonatomic, strong) NSVisualEffectView *materialView;
+@property(nonatomic, strong) NSView *contentContainer;
 @property(nonatomic, strong) UsageSurfaceView *panelBackground;
 @property(nonatomic, strong) NSTextField *titleLabel;
 @property(nonatomic, strong) NSTextField *primaryLabel;
@@ -229,18 +229,17 @@ static const NSInteger WeeklyWindowMinutes = 10080;
                                             NSWindowCollectionBehaviorFullScreenAuxiliary |
                                             NSWindowCollectionBehaviorStationary;
 
-    self.materialView = [[NSVisualEffectView alloc] initWithFrame:contentRect];
-    self.materialView.material = NSVisualEffectMaterialPopover;
-    self.materialView.blendingMode = NSVisualEffectBlendingModeWithinWindow;
-    self.materialView.state = NSVisualEffectStateActive;
-    self.materialView.wantsLayer = YES;
-    self.materialView.layer.masksToBounds = YES;
-    self.floatingPanel.contentView = self.materialView;
+    // Keep every pixel outside the round surface truly transparent. A root
+    // visual-effect view paints a rectangular backdrop on macOS.
+    self.contentContainer = [[NSView alloc] initWithFrame:contentRect];
+    self.contentContainer.wantsLayer = YES;
+    self.contentContainer.layer.backgroundColor = NSColor.clearColor.CGColor;
+    self.floatingPanel.contentView = self.contentContainer;
 
     self.panelBackground = [[UsageSurfaceView alloc] initWithFrame:contentRect];
     self.panelBackground.monitor = self;
     self.panelBackground.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-    [self.materialView addSubview:self.panelBackground];
+    [self.contentContainer addSubview:self.panelBackground];
 
     self.titleLabel = [self labelWithFrame:NSMakeRect(20, 96, 280, 16)
                                       font:[NSFont systemFontOfSize:11 weight:NSFontWeightSemibold]
@@ -325,8 +324,7 @@ static const NSInteger WeeklyWindowMinutes = 10080;
         view.alphaValue = self.isExpanded ? 1 : (animated ? 0 : 1);
     }
     self.panelBackground.expanded = self.isExpanded;
-    self.materialView.frame = NSMakeRect(0, 0, size.width, size.height);
-    self.materialView.layer.cornerRadius = self.isExpanded ? 18 : size.width / 2;
+    self.contentContainer.frame = NSMakeRect(0, 0, size.width, size.height);
     self.panelBackground.frame = NSMakeRect(0, 0, size.width, size.height);
     self.compactTitleLabel.frame = NSMakeRect(0, 39, size.width, 14);
     self.compactPercentLabel.frame = NSMakeRect(0, 18, size.width, 23);
