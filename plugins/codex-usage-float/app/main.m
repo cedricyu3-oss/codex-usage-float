@@ -131,10 +131,26 @@ static const NSInteger WeeklyWindowMinutes = 10080;
         NSData *data = [line dataUsingEncoding:NSUTF8StringEncoding];
         id root = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
         NSDictionary *limits = [self findRateLimits:root];
-        NSDictionary *primary = [self windowFromLimits:limits key:@"primary" expectedMinutes:FiveHourWindowMinutes];
-        NSDictionary *secondary = [self windowFromLimits:limits key:@"secondary" expectedMinutes:WeeklyWindowMinutes];
-        if (primary != nil && secondary != nil) {
-            return @{ @"primary": primary, @"secondary": secondary, @"modifiedAt": modifiedAt };
+        NSDictionary *first = [self validWindow:limits[@"primary"]];
+        NSDictionary *second = [self validWindow:limits[@"secondary"]];
+        NSDictionary *fiveHour = nil;
+        NSDictionary *weekly = nil;
+        for (NSDictionary *window in @[first ?: (id)NSNull.null, second ?: (id)NSNull.null]) {
+            if (![window isKindOfClass:[NSDictionary class]]) {
+                continue;
+            }
+            if ([window[@"window_minutes"] integerValue] == FiveHourWindowMinutes) {
+                fiveHour = window;
+            } else if ([window[@"window_minutes"] integerValue] == WeeklyWindowMinutes) {
+                weekly = window;
+            }
+        }
+        if (weekly != nil) {
+            NSMutableDictionary *snapshot = [@{ @"secondary": weekly, @"modifiedAt": modifiedAt } mutableCopy];
+            if (fiveHour != nil) {
+                snapshot[@"primary"] = fiveHour;
+            }
+            return snapshot;
         }
     }
     return nil;
@@ -164,15 +180,14 @@ static const NSInteger WeeklyWindowMinutes = 10080;
     return nil;
 }
 
-- (NSDictionary *)windowFromLimits:(NSDictionary *)limits key:(NSString *)key expectedMinutes:(NSInteger)expectedMinutes {
-    NSDictionary *window = limits[key];
+- (NSDictionary *)validWindow:(id)window {
     if (![window isKindOfClass:[NSDictionary class]] ||
-        [window[@"window_minutes"] integerValue] != expectedMinutes ||
         ![window[@"used_percent"] isKindOfClass:[NSNumber class]] ||
         ![window[@"resets_at"] isKindOfClass:[NSNumber class]]) {
         return nil;
     }
-    return window;
+    NSInteger minutes = [window[@"window_minutes"] integerValue];
+    return (minutes == FiveHourWindowMinutes || minutes == WeeklyWindowMinutes) ? window : nil;
 }
 
 - (void)updateStatusItemWithSnapshot:(NSDictionary *)snapshot {
@@ -186,16 +201,16 @@ static const NSInteger WeeklyWindowMinutes = 10080;
     } else {
         NSDictionary *primary = snapshot[@"primary"];
         NSDictionary *secondary = snapshot[@"secondary"];
-        double primaryRemaining = [self remainingPercentForWindow:primary];
+        double primaryRemaining = primary ? [self remainingPercentForWindow:primary] : 0;
         double secondaryRemaining = [self remainingPercentForWindow:secondary];
-        NSString *primaryText = [self percentText:primaryRemaining];
+        NSString *primaryText = primary ? [self percentText:primaryRemaining] : @"--";
         NSString *secondaryText = [self percentText:secondaryRemaining];
 
         self.statusItem.button.title = [NSString stringWithFormat:@"Codex · 5h %@ · 7d %@", primaryText, secondaryText];
         self.statusItem.button.toolTip = @"Codex 额度剩余（本地快照）";
         [self addDisabledItem:@"Codex 使用额度" toMenu:menu];
         [menu addItem:[NSMenuItem separatorItem]];
-        [self addDisabledItem:[self menuLineWithTitle:@"5 小时" window:primary] toMenu:menu];
+        [self addDisabledItem:primary ? [self menuLineWithTitle:@"5 小时" window:primary] : @"5 小时：当前 Codex 未提供该窗口" toMenu:menu];
         [self addDisabledItem:[self menuLineWithTitle:@"本周" window:secondary] toMenu:menu];
         NSDate *modifiedAt = snapshot[@"modifiedAt"];
         [self addDisabledItem:[NSString stringWithFormat:@"本地快照：%@", [self.dateFormatter stringFromDate:modifiedAt]] toMenu:menu];
@@ -408,14 +423,15 @@ static const NSInteger WeeklyWindowMinutes = 10080;
 
     NSDictionary *primary = snapshot[@"primary"];
     NSDictionary *secondary = snapshot[@"secondary"];
-    double primaryRemaining = [self remainingPercentForWindow:primary];
+    double primaryRemaining = primary ? [self remainingPercentForWindow:primary] : 0;
     double secondaryRemaining = [self remainingPercentForWindow:secondary];
-    self.primaryLabel.stringValue = [NSString stringWithFormat:@"5小时   ·   剩余 %@", [self percentText:primaryRemaining]];
+    self.primaryLabel.stringValue = primary ? [NSString stringWithFormat:@"5小时   ·   剩余 %@", [self percentText:primaryRemaining]] : @"5小时   ·   当前 Codex 未提供";
     self.secondaryLabel.stringValue = [NSString stringWithFormat:@"本周     ·   剩余 %@", [self percentText:secondaryRemaining]];
-    NSDate *primaryReset = [NSDate dateWithTimeIntervalSince1970:[primary[@"resets_at"] doubleValue]];
+    NSDate *primaryReset = primary ? [NSDate dateWithTimeIntervalSince1970:[primary[@"resets_at"] doubleValue]] : nil;
     NSDate *secondaryReset = [NSDate dateWithTimeIntervalSince1970:[secondary[@"resets_at"] doubleValue]];
-    self.snapshotLabel.stringValue = [NSString stringWithFormat:@"重置：%@  ·  %@", [self.dateFormatter stringFromDate:primaryReset], [self.dateFormatter stringFromDate:secondaryReset]];
-    self.compactPercentLabel.stringValue = [self percentText:primaryRemaining];
+    self.snapshotLabel.stringValue = primary ? [NSString stringWithFormat:@"重置：%@  ·  %@", [self.dateFormatter stringFromDate:primaryReset], [self.dateFormatter stringFromDate:secondaryReset]] : [NSString stringWithFormat:@"本周重置：%@", [self.dateFormatter stringFromDate:secondaryReset]];
+    self.compactTitleLabel.stringValue = primary ? @"5H" : @"7D";
+    self.compactPercentLabel.stringValue = [self percentText:primary ? primaryRemaining : secondaryRemaining];
     self.panelBackground.primaryRemaining = primaryRemaining;
     self.panelBackground.secondaryRemaining = secondaryRemaining;
     [self.panelBackground setNeedsDisplay:YES];
