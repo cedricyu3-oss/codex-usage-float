@@ -32,7 +32,7 @@ static const NSInteger WeeklyWindowMinutes = 10080;
 @property(nonatomic, strong) NSTimer *refreshTimer;
 @property(nonatomic, strong) NSDateFormatter *dateFormatter;
 @property(nonatomic, strong) NSPanel *floatingPanel;
-@property(nonatomic, strong) NSView *contentContainer;
+@property(nonatomic, strong) NSVisualEffectView *contentContainer;
 @property(nonatomic, strong) UsageSurfaceView *panelBackground;
 @property(nonatomic, strong) NSTextField *titleLabel;
 @property(nonatomic, strong) NSTextField *primaryLabel;
@@ -244,11 +244,16 @@ static const NSInteger WeeklyWindowMinutes = 10080;
                                             NSWindowCollectionBehaviorFullScreenAuxiliary |
                                             NSWindowCollectionBehaviorStationary;
 
-    // Keep every pixel outside the round surface truly transparent. A root
-    // visual-effect view paints a rectangular backdrop on macOS.
-    self.contentContainer = [[NSView alloc] initWithFrame:contentRect];
-    self.contentContainer.wantsLayer = YES;
-    self.contentContainer.layer.backgroundColor = NSColor.clearColor.CGColor;
+    // Use NSVisualEffectView to achieve native macOS frosted glass and vibrancy
+    NSVisualEffectView *effectView = [[NSVisualEffectView alloc] initWithFrame:contentRect];
+    effectView.wantsLayer = YES;
+    effectView.blendingMode = NSVisualEffectBlendingModeBehindWindow;
+    effectView.material = NSVisualEffectMaterialHUDWindow;
+    effectView.state = NSVisualEffectStateActive;
+    effectView.layer.cornerRadius = 34.0;
+    effectView.layer.masksToBounds = YES;
+    
+    self.contentContainer = effectView;
     self.floatingPanel.contentView = self.contentContainer;
 
     self.panelBackground = [[UsageSurfaceView alloc] initWithFrame:contentRect];
@@ -263,13 +268,13 @@ static const NSInteger WeeklyWindowMinutes = 10080;
     [self.panelBackground addSubview:self.titleLabel];
 
     self.primaryLabel = [self labelWithFrame:NSMakeRect(20, 66, 300, 17)
-                                        font:[NSFont systemFontOfSize:14 weight:NSFontWeightSemibold]
+                                        font:[NSFont monospacedDigitSystemFontOfSize:14 weight:NSFontWeightSemibold]
                                        color:NSColor.controlAccentColor];
     self.secondaryLabel = [self labelWithFrame:NSMakeRect(20, 36, 300, 17)
-                                          font:[NSFont systemFontOfSize:13 weight:NSFontWeightMedium]
+                                          font:[NSFont monospacedDigitSystemFontOfSize:13 weight:NSFontWeightMedium]
                                          color:NSColor.labelColor];
     self.snapshotLabel = [self labelWithFrame:NSMakeRect(20, 10, 300, 14)
-                                          font:[NSFont systemFontOfSize:10]
+                                          font:[NSFont monospacedDigitSystemFontOfSize:10 weight:NSFontWeightRegular]
                                          color:NSColor.tertiaryLabelColor];
     [self.panelBackground addSubview:self.primaryLabel];
     [self.panelBackground addSubview:self.secondaryLabel];
@@ -343,9 +348,12 @@ static const NSInteger WeeklyWindowMinutes = 10080;
     self.panelBackground.frame = NSMakeRect(0, 0, size.width, size.height);
     self.compactTitleLabel.frame = NSMakeRect(0, 39, size.width, 14);
     self.compactPercentLabel.frame = NSMakeRect(0, 18, size.width, 23);
+    
+    CGFloat cornerRadius = self.isExpanded ? 18.0 : 34.0;
     [self.panelBackground setNeedsDisplay:YES];
 
     if (!animated || wasExpanded == self.isExpanded) {
+        self.contentContainer.layer.cornerRadius = cornerRadius;
         [self.floatingPanel setFrame:panelFrame display:YES];
         for (NSView *view in details) {
             view.hidden = !self.isExpanded;
@@ -361,6 +369,16 @@ static const NSInteger WeeklyWindowMinutes = 10080;
     [NSAnimationContext runAnimationGroup:^(NSAnimationContext *context) {
         context.duration = 0.24;
         context.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+        
+        // Animate corner radius of the visual effect view
+        CABasicAnimation *radiusAnim = [CABasicAnimation animationWithKeyPath:@"cornerRadius"];
+        radiusAnim.fromValue = @(self.isExpanded ? 34.0 : 18.0);
+        radiusAnim.toValue = @(cornerRadius);
+        radiusAnim.duration = 0.24;
+        radiusAnim.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+        [self.contentContainer.layer addAnimation:radiusAnim forKey:@"cornerRadius"];
+        self.contentContainer.layer.cornerRadius = cornerRadius;
+
         [[self.floatingPanel animator] setFrame:panelFrame display:YES];
         for (NSView *view in details) {
             view.animator.alphaValue = self.isExpanded ? 1 : 0;

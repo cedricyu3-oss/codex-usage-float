@@ -15,10 +15,9 @@
 - (void)drawRect:(NSRect)dirtyRect {
     NSRect bounds = self.bounds;
     if (self.expanded) {
-        NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:bounds xRadius:18 yRadius:18];
-        [[NSColor colorWithWhite:0.0 alpha:0.06] setFill];
-        [card fill];
-        [[NSColor separatorColor] setStroke];
+        NSRect borderRect = NSInsetRect(bounds, 0.5, 0.5);
+        NSBezierPath *card = [NSBezierPath bezierPathWithRoundedRect:borderRect xRadius:17.5 yRadius:17.5];
+        [[[NSColor whiteColor] colorWithAlphaComponent:0.15] setStroke];
         card.lineWidth = 1;
         [card stroke];
         [self drawBarAtY:58 percentage:self.primaryRemaining color:NSColor.controlAccentColor];
@@ -26,20 +25,23 @@
         return;
     }
 
-    NSRect circleRect = NSInsetRect(bounds, 3, 3);
-    NSBezierPath *circle = [NSBezierPath bezierPathWithOvalInRect:circleRect];
-    [[NSColor colorWithWhite:0.0 alpha:0.06] setFill];
-    [circle fill];
-
     NSPoint center = NSMakePoint(NSMidX(bounds), NSMidY(bounds));
+    NSRect circleRect = NSInsetRect(bounds, 3, 3);
     CGFloat radius = NSWidth(circleRect) / 2 - 3;
     NSBezierPath *track = [NSBezierPath bezierPath];
     [track appendBezierPathWithArcWithCenter:center radius:radius startAngle:90 endAngle:449 clockwise:NO];
     track.lineWidth = 3;
-    [[NSColor separatorColor] setStroke];
+    [[[NSColor whiteColor] colorWithAlphaComponent:0.12] setStroke];
     [track stroke];
 
     if (self.primaryRemaining > 0) {
+        [NSGraphicsContext saveGraphicsState];
+        NSShadow *shadow = [[NSShadow alloc] init];
+        shadow.shadowColor = [NSColor.controlAccentColor colorWithAlphaComponent:0.5];
+        shadow.shadowOffset = NSMakeSize(0, 0);
+        shadow.shadowBlurRadius = 4;
+        [shadow set];
+
         NSBezierPath *progress = [NSBezierPath bezierPath];
         CGFloat endAngle = 90 + 360 * MIN(MAX(self.primaryRemaining, 0), 100) / 100;
         [progress appendBezierPathWithArcWithCenter:center radius:radius startAngle:90 endAngle:endAngle clockwise:NO];
@@ -47,20 +49,32 @@
         progress.lineCapStyle = NSLineCapStyleRound;
         [NSColor.controlAccentColor setStroke];
         [progress stroke];
+
+        [NSGraphicsContext restoreGraphicsState];
     }
 }
 
 - (void)drawBarAtY:(CGFloat)y percentage:(double)percentage color:(NSColor *)color {
-    NSRect trackRect = NSMakeRect(20, y, NSWidth(self.bounds) - 40, 3);
-    NSBezierPath *track = [NSBezierPath bezierPathWithRoundedRect:trackRect xRadius:1.5 yRadius:1.5];
-    [[[NSColor separatorColor] colorWithAlphaComponent:0.45] setFill];
+    NSRect trackRect = NSMakeRect(20, y, NSWidth(self.bounds) - 40, 5);
+    NSBezierPath *track = [NSBezierPath bezierPathWithRoundedRect:trackRect xRadius:2.5 yRadius:2.5];
+    [[[NSColor whiteColor] colorWithAlphaComponent:0.1] setFill];
     [track fill];
+    
     NSRect fillRect = trackRect;
     fillRect.size.width *= MIN(MAX(percentage, 0), 100) / 100;
     if (fillRect.size.width > 0) {
-        NSBezierPath *fill = [NSBezierPath bezierPathWithRoundedRect:fillRect xRadius:1.5 yRadius:1.5];
+        [NSGraphicsContext saveGraphicsState];
+        NSShadow *shadow = [[NSShadow alloc] init];
+        shadow.shadowColor = [color colorWithAlphaComponent:0.4];
+        shadow.shadowOffset = NSMakeSize(0, 0);
+        shadow.shadowBlurRadius = 3;
+        [shadow set];
+        
+        NSBezierPath *fill = [NSBezierPath bezierPathWithRoundedRect:fillRect xRadius:2.5 yRadius:2.5];
         [color setFill];
         [fill fill];
+        
+        [NSGraphicsContext restoreGraphicsState];
     }
 }
 
