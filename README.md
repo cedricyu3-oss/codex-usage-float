@@ -1,15 +1,14 @@
 # Codex Usage Float
 
-A small, local macOS floating utility for viewing Codex account usage without repeatedly opening settings.
+A small, local macOS menu-bar utility for viewing Codex account usage without repeatedly opening settings.
 
-It displays the remaining 5-hour allowance as a compact floating ball. Click to expand 5-hour and weekly usage details; click again to collapse. The panel can be dragged, stays on screen when expanded, and returns to its original ball position when collapsed.
+It keeps the current allowance in the macOS menu bar, alongside the other status items. Click the menu-bar item for 5-hour and weekly usage details.
 
 ## Features
 
-- Native macOS frosted-material visual style and system accent color.
-- Compact 5-hour quota ball with a progress ring.
-- Expandable 5-hour and weekly quota details, including local reset times.
-- Smooth expand/collapse animation and drag support.
+- Native macOS menu-bar status item.
+- 5-hour and weekly quota details, including local reset times.
+- No floating window or persistent desktop overlay.
 - Reads only local Codex session snapshots; no credentials, analytics, or network requests.
 - Includes a Codex marketplace-ready plugin layout.
 
@@ -29,7 +28,7 @@ zsh run.sh
 
 This builds `~/Applications/Codex Usage Float.app` and launches it. The utility refreshes every 20 seconds.
 
-If the ball shows `--`, complete a Codex turn and wait for the next refresh.
+If the menu-bar item shows `--`, complete a Codex turn and wait for the next refresh.
 
 ## Install as a Codex plugin
 

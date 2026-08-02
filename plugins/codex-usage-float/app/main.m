@@ -3,6 +3,9 @@
 
 static const NSInteger FiveHourWindowMinutes = 300;
 static const NSInteger WeeklyWindowMinutes = 10080;
+// Keep the monitor in the macOS menu bar. The older floating panel code is
+// retained for compatibility, but is intentionally disabled by default.
+static const BOOL ShowFloatingPanel = NO;
 
 @class UsageMonitor;
 
@@ -57,7 +60,9 @@ static const NSInteger WeeklyWindowMinutes = 10080;
     self.statusItem.button.title = @"Codex · --";
     self.statusItem.button.toolTip = @"Codex Usage Float";
 
-    [self configureFloatingPanel];
+    if (ShowFloatingPanel) {
+        [self configureFloatingPanel];
+    }
 
     [self reload:nil];
     self.refreshTimer = [NSTimer scheduledTimerWithTimeInterval:20.0
@@ -224,7 +229,9 @@ static const NSInteger WeeklyWindowMinutes = 10080;
     quitItem.target = NSApp;
     [menu addItem:quitItem];
     self.statusItem.menu = menu;
-    [self updateFloatingPanelWithSnapshot:snapshot];
+    if (ShowFloatingPanel) {
+        [self updateFloatingPanelWithSnapshot:snapshot];
+    }
 }
 
 - (void)configureFloatingPanel {
