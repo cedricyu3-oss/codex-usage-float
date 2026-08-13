@@ -2,12 +2,12 @@
 
 A small, local macOS menu-bar utility for viewing Codex account usage without repeatedly opening settings.
 
-It keeps the current allowance in the macOS menu bar, alongside the other status items. Click the menu-bar item for 5-hour and weekly usage details.
+It keeps the current weekly allowance in the macOS menu bar, alongside the other status items. Click the menu-bar item for weekly usage details.
 
 ## Features
 
 - Native macOS menu-bar status item.
-- 5-hour and weekly quota details, including local reset times.
+- Weekly quota details, including the local reset time.
 - No floating window or persistent desktop overlay.
 - Reads only local Codex session snapshots; no credentials, analytics, or network requests.
 - Includes a Codex marketplace-ready plugin layout.
