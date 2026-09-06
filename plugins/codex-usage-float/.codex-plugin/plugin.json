@@ -1,20 +1,20 @@
 {
   "name": "codex-usage-float",
   "version": "0.1.0",
-  "description": "A local macOS menu-bar monitor for the latest Codex weekly usage snapshot.",
+  "description": "A local macOS menu-bar monitor for recent Codex 5-hour and weekly usage snapshots.",
   "author": {
     "name": "Codex Usage Float contributors"
   },
   "skills": "./skills/",
   "interface": {
     "displayName": "Codex Usage Float",
-    "shortDescription": "Keep weekly Codex quota remaining in your menu bar.",
+    "shortDescription": "Keep 5-hour and weekly Codex quota remaining in your menu bar.",
     "longDescription": "Builds a local macOS menu-bar utility that reads the latest Codex usage snapshot stored on this Mac. No credentials or usage data leave the device.",
     "developerName": "Codex Usage Float contributors",
     "category": "Productivity",
     "capabilities": [
       "Local macOS menu-bar monitor",
-      "Weekly usage snapshot reader"
+      "Local session snapshot reader"
     ],
     "defaultPrompt": "Help me launch Codex Usage Float and verify its local usage snapshot."
   }

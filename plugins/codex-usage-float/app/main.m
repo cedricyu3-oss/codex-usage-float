@@ -57,7 +57,7 @@ static const BOOL ShowFloatingPanel = NO;
     self.dateFormatter.dateFormat = @"M月d日 HH:mm";
 
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
-    self.statusItem.button.title = @"Codex · 7d --";
+    self.statusItem.button.title = @"Codex · 5h -- · 7d --";
     self.statusItem.button.toolTip = @"Codex Usage Float";
 
     if (ShowFloatingPanel) {
@@ -199,19 +199,23 @@ static const BOOL ShowFloatingPanel = NO;
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Codex 使用额度"];
 
     if (snapshot == nil) {
-        self.statusItem.button.title = @"Codex · 7d --";
+        self.statusItem.button.title = @"Codex · 5h -- · 7d --";
         self.statusItem.button.toolTip = @"尚未找到 Codex 额度快照";
         [self addDisabledItem:@"尚未找到额度快照" toMenu:menu];
         [self addDisabledItem:@"先完成一次 Codex 对话后再刷新。" toMenu:menu];
     } else {
+        NSDictionary *primary = snapshot[@"primary"];
         NSDictionary *secondary = snapshot[@"secondary"];
+        double primaryRemaining = primary ? [self remainingPercentForWindow:primary] : 0;
         double secondaryRemaining = [self remainingPercentForWindow:secondary];
+        NSString *primaryText = primary ? [self percentText:primaryRemaining] : @"--";
         NSString *secondaryText = [self percentText:secondaryRemaining];
 
-        self.statusItem.button.title = [NSString stringWithFormat:@"Codex · 7d %@", secondaryText];
+        self.statusItem.button.title = [NSString stringWithFormat:@"Codex · 5h %@ · 7d %@", primaryText, secondaryText];
         self.statusItem.button.toolTip = @"Codex 额度剩余（本地快照）";
         [self addDisabledItem:@"Codex 使用额度" toMenu:menu];
         [menu addItem:[NSMenuItem separatorItem]];
+        [self addDisabledItem:primary ? [self menuLineWithTitle:@"5 小时" window:primary] : @"5 小时：当前 Codex 未提供该窗口" toMenu:menu];
         [self addDisabledItem:[self menuLineWithTitle:@"本周" window:secondary] toMenu:menu];
         NSDate *modifiedAt = snapshot[@"modifiedAt"];
         [self addDisabledItem:[NSString stringWithFormat:@"本地快照：%@", [self.dateFormatter stringFromDate:modifiedAt]] toMenu:menu];
